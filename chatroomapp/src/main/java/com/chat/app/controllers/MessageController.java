@@ -1,20 +1,27 @@
 package com.chat.app.controllers;
 
-import com.chat.app.models.Message;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.stereotype.Controller;
 
-@RestController
+@Controller
 public class MessageController {
 
+    private final RedisTemplate<String, String> redisTemplate;
 
-    @MessageMapping("/message")
-    @SendTo("/topic/return-to")
-    public Message getContent(@RequestBody Message message) {
-
-        return message;
+    @Autowired
+    public MessageController(RedisTemplate<String, String> redisTemplate) {
+        this.redisTemplate = redisTemplate;
     }
 
+    @MessageMapping("/chat/{roomId}")
+    @SendTo("/topic/chat/{roomId}")
+    public String handleMessage(@DestinationVariable String roomId, String message) {
+        redisTemplate.convertAndSend(roomId, message);
+        return message;
+    }
 }
